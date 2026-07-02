@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ControlExistencias</title>
+<style>
+  :root{
+    --tinta:#0f1c26;
+    --acero:#1f3a4f;
+    --acero-claro:#2c5170;
+    --lienzo:#f3efe4;
+    --papel:#ffffff;
+    --linea:#d9d2bf;
+    --ambar:#c9821f;
+    --ambar-osc:#a2680f;
+    --verde:#3c6e4a;
+    --rojo:#a13d28;
+    --texto:#1c2a33;
+    --texto-suave:#5a6b74;
+    font-size:16px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--lienzo);
+    color:var(--texto);
+    font-family:"Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{
+    font-family:"Arial Narrow", "Segoe UI Semibold", Roboto, Arial, sans-serif;
+    letter-spacing:.02em;
+    margin:0;
+  }
+  .num{ font-variant-numeric:tabular-nums; font-family:"Consolas","Menlo",monospace; }
+
+  /* ---------- top bar ---------- */
+  header.topbar{
+    background:linear-gradient(180deg,var(--tinta),var(--acero));
+    color:#f1ede0;
+    padding:14px 18px 0 18px;
+    position:sticky; top:0; z-index:20;
+    box-shadow:0 2px 6px rgba(0,0,0,.25);
+  }
+  .topbar .brand{
+    display:flex; align-items:baseline; gap:10px; margin-bottom:12px;
+  }
+  .topbar .brand .mark{
+    width:30px;height:30px;border:2px solid var(--ambar);border-radius:4px;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:800;color:var(--ambar);font-size:15px;transform:rotate(-3deg);
+    font-family:"Arial Narrow",Arial,sans-serif;
+  }
+  .topbar h1{ font-size:1.35rem; font-weight:700; color:#f6f2e6; }
+  .topbar .sub{ font-size:.72rem; color:#b9c4cc; letter-spacing:.12em; text-transform:uppercase; }
+  nav.tabs{
+    display:flex; gap:2px; overflow-x:auto;
+  }
+  nav.tabs button{
+    background:rgba(255,255,255,0.06);
+    border:none; border-bottom:3px solid transparent;
+    color:#cfd8dd; padding:10px 16px; font-size:.85rem; font-weight:600;
+    cursor:pointer; white-space:nowrap; border-radius:6px 6px 0 0;
+    transition:background .15s, color .15s;
+  }
+  nav.tabs button:hover{ background:rgba(255,255,255,0.12); color:#fff; }
+  nav.tabs button.active{
+    background:var(--lienzo); color:var(--tinta); border-bottom:3px solid var(--ambar);
+  }
+  nav.tabs button.nav-action{
+    background:rgba(201,130,31,.14); color:#f6e6c8; border-radius:20px; margin-bottom:6px;
+  }
+  nav.tabs button.nav-action:hover{ background:rgba(201,130,31,.26); color:#fff; }
+  nav.tabs button.nav-action:first-of-type{ margin-left:auto; }
+
+  .empresa-strip{
+    display:flex; align-items:center; gap:10px; margin-bottom:10px;
+    padding:7px 10px; background:rgba(255,255,255,.05); border-radius:7px;
+  }
+  .empresa-strip img.logo-empresa{
+    width:32px; height:32px; object-fit:contain; border-radius:5px; background:#fff; flex-shrink:0;
+  }
+  .empresa-strip .info{ line-height:1.3; min-width:0; }
+  .empresa-strip .info .nombre{ font-size:.82rem; font-weight:700; color:#f6f2e6; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .empresa-strip .info .direccion{ font-size:.68rem; color:#b9c4cc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  .modal-box.wide{ max-width:480px; text-align:left; max-height:88vh; overflow-y:auto; }
+  .modal-box.wide h3{ font-size:1.05rem; color:var(--tinta); margin-bottom:14px; }
+  .preview-logo{
+    width:70px; height:70px; object-fit:contain; border:1px solid var(--linea);
+    border-radius:6px; margin-bottom:8px; background:#fff; display:block;
+  }
+
+  main{ max-width:980px; margin:0 auto; padding:20px 16px 60px 16px; }
+  section.tab-panel{ display:none; }
+  section.tab-panel.active{ display:block; animation:fade .15s ease; }
+  @keyframes fade{ from{opacity:0;} to{opacity:1;} }
+
+  .card{
+    background:var(--papel); border:1px solid var(--linea); border-radius:8px;
+    padding:18px; margin-bottom:18px; box-shadow:0 1px 3px rgba(15,28,38,.06);
+  }
+  .card h2{ font-size:1.05rem; color:var(--acero); margin-bottom:14px; display:flex; align-items:center; gap:8px;}
+  .card h2 .tag{
+    font-size:.62rem; text-transform:uppercase; letter-spacing:.1em;
+    background:var(--lienzo); border:1px solid var(--linea); color:var(--texto-suave);
+    padding:2px 7px; border-radius:20px; font-weight:700;
+  }
+
+  label{ display:block; font-size:.75rem; font-weight:700; color:var(--texto-suave); margin-bottom:4px; text-transform:uppercase; letter-spacing:.04em;}
+  input[type=text], input[type=number], input[type=date], textarea, select{
+    width:100%; padding:9px 10px; border:1px solid var(--linea); border-radius:6px;
+    font-size:.92rem; background:#fffdf8; color:var(--texto); font-family:inherit;
+  }
+  input:focus, textarea:focus, select:focus{ outline:2px solid var(--ambar); outline-offset:1px; border-color:var(--ambar); }
+  textarea{ resize:vertical; min-height:56px; }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .grid3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+  .field{ margin-bottom:12px; }
+  @media (max-width:640px){ .grid2, .grid3{ grid-template-columns:1fr; } }
+
+  button.btn{
+    border:none; border-radius:6px; padding:9px 16px; font-size:.85rem; font-weight:700;
+    cursor:pointer; letter-spacing:.02em; transition:filter .15s, transform .1s;
+  }
+  button.btn:active{ transform:scale(.97); }
+  .btn-primary{ background:var(--acero); color:#fff; }
+  .btn-primary:hover{ filter:brightness(1.12); }
+  .btn-ambar{ background:var(--ambar); color:#2a1a04; }
+  .btn-ambar:hover{ filter:brightness(1.08); }
+  .btn-danger{ background:transparent; color:var(--rojo); border:1px solid var(--rojo); }
+  .btn-danger:hover{ background:var(--rojo); color:#fff; }
+  .btn-ghost{ background:transparent; color:var(--acero); border:1px solid var(--linea); }
+  .btn-ghost:hover{ background:var(--lienzo); }
+  .btn-sm{ padding:5px 10px; font-size:.75rem; }
+  .row-actions{ display:flex; gap:6px; flex-wrap:wrap; }
+
+  table{ width:100%; border-collapse:collapse; font-size:.85rem; }
+  th{ text-align:left; font-size:.68rem; text-transform:uppercase; letter-spacing:.06em;
+      color:var(--texto-suave); border-bottom:2px solid var(--linea); padding:6px 8px; }
+  td{ padding:8px; border-bottom:1px solid var(--linea); vertical-align:middle; }
+  tr:last-child td{ border-bottom:none; }
+  .empty-msg{ color:var(--texto-suave); font-size:.85rem; padding:14px 4px; font-style:italic; }
+
+  /* ---------- stamp (signature element) ---------- */
+  .sello{
+    display:inline-flex; align-items:center; justify-content:center;
+    min-width:58px; padding:5px 9px; border:2px solid var(--ambar-osc);
+    border-radius:5px; color:var(--ambar-osc); font-weight:800; font-size:.85rem;
+    transform:rotate(-2deg); font-family:"Consolas","Menlo",monospace;
+    background:rgba(201,130,31,.07);
+  }
+  .sello.grande{ font-size:1.4rem; padding:10px 20px; min-width:auto; }
+  .sello.verde{ border-color:var(--verde); color:var(--verde); background:rgba(60,110,74,.07); }
+
+  /* ---------- reporte builder ---------- */
+  .marca-block{
+    border:1px solid var(--linea); border-left:4px solid var(--acero-claro);
+    border-radius:6px; padding:14px; margin-bottom:16px; background:#fffdf8;
+  }
+  .marca-block .marca-head{ display:flex; gap:10px; align-items:flex-end; margin-bottom:10px; }
+  .marca-block .marca-head .field{ flex:1; margin-bottom:0; }
+  .foto-cell{ width:78px; }
+  .foto-thumb{
+    width:64px; height:64px; object-fit:cover; border-radius:6px; border:1px solid var(--linea); cursor:pointer; display:block;
+  }
+  .foto-placeholder{
+    width:64px; height:64px; border:1.5px dashed var(--linea); border-radius:6px;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    color:var(--texto-suave); font-size:1.4rem; background:var(--lienzo);
+  }
+  .foto-placeholder:hover{ border-color:var(--ambar); color:var(--ambar); }
+  input[type=number].qty{ text-align:right; font-family:"Consolas","Menlo",monospace; }
+  .subtotal-row td{ font-weight:700; border-top:2px solid var(--linea); background:var(--lienzo); }
+  .grand-total-bar{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:14px 18px; background:var(--tinta); border-radius:8px; color:#f1ede0; margin-top:6px;
+    flex-wrap:wrap;
+  }
+  .grand-total-bar .label{ font-size:.75rem; text-transform:uppercase; letter-spacing:.1em; color:#b9c4cc; }
+  .toolbar{ display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
+
+  /* ---------- historial ---------- */
+  .reporte-card{ display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+  .reporte-card .meta{ font-size:.8rem; color:var(--texto-suave); }
+  .reporte-card .meta strong{ color:var(--texto); font-size:.95rem; }
+
+  /* ---------- modal ---------- */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(15,28,38,.55); display:none;
+    align-items:center; justify-content:center; z-index:100; padding:16px;
+  }
+  .modal-overlay.show{ display:flex; }
+  .modal-box{ background:#fff; border-radius:10px; padding:22px; max-width:380px; width:100%; box-shadow:0 10px 30px rgba(0,0,0,.3); }
+  .modal-box p{ font-size:.92rem; margin:0 0 18px 0; color:var(--texto); line-height:1.4; }
+  .modal-actions{ display:flex; justify-content:flex-end; gap:8px; }
+
+  .toast{
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--tinta); color:#f1ede0; padding:11px 20px; border-radius:8px;
+    font-size:.85rem; box-shadow:0 4px 14px rgba(0,0,0,.3); z-index:200; opacity:0;
+    transition:opacity .2s, transform .2s; pointer-events:none;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* ---------- reporte view (detalle / impresion) ---------- */
+  .view-header{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; flex-wrap:wrap; gap:10px;}
+  .view-header .titulo{ font-size:1.15rem; font-weight:800; color:var(--tinta); }
+  .view-header .sub{ font-size:.8rem; color:var(--texto-suave); }
+
+  @media print{
+    header.topbar, .no-print{ display:none !important; }
+    body{ background:#fff; }
+    main{ max-width:100%; padding:0; }
+    .card{ box-shadow:none; border:1px solid #999; }
+    .sello{ transform:none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="mark">CE</div>
+    <div>
+      <h1>ControlExistencias</h1>
+      <div class="sub">Reporte de existencias por viaje</div>
+    </div>
+  </div>
+  <div class="empresa-strip" id="empresaStrip">
+    <img id="hdrLogo" class="logo-empresa" src="" alt="Logo" style="display:none;">
+    <div class="info">
+      <div class="nombre" id="hdrNombreEmpresa">Configura los datos de tu empresa</div>
+      <div class="direccion" id="hdrDireccionEmpresa" style="display:none;"></div>
+    </div>
+  </div>
+  <nav class="tabs" id="tabNav">
+    <button data-tab="inicio" class="active">Inicio</button>
+    <button data-tab="viajes">Viajes</button>
+    <button data-tab="marcas">Marcas</button>
+    <button data-tab="nuevo">Nuevo reporte</button>
+    <button data-tab="historial">Reportes</button>
+    <button class="nav-action" onclick="abrirModalEmpresa()">🏢 Datos de la Empresa</button>
+    <button class="nav-action" onclick="abrirModalBackup()">⚙️ Config. / Copia de seguridad</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ================= INICIO ================= -->
+  <section class="tab-panel active" id="tab-inicio">
+    <div class="card">
+      <h2>Bienvenido</h2>
+      <p style="font-size:.9rem;color:var(--texto-suave);line-height:1.5;">
+        Registra tus <strong>viajes</strong> y <strong>marcas</strong> en los catálogos, y usa
+        <strong>Nuevo reporte</strong> para capturar existencias por marca con fotos y cantidades
+        de Juárez, Macro y Valle. Todo se guarda en este dispositivo.
+      </p>
+      <div class="toolbar">
+        <button class="btn btn-ambar" onclick="goTab('nuevo')">+ Nuevo reporte</button>
+        <button class="btn btn-ghost" onclick="goTab('viajes')">Catálogo de viajes</button>
+        <button class="btn btn-ghost" onclick="goTab('marcas')">Catálogo de marcas</button>
+      </div>
+    </div>
+    <div class="grid3" id="statsBox"></div>
+  </section>
+
+  <!-- ================= VIAJES ================= -->
+  <section class="tab-panel" id="tab-viajes">
+    <div class="card">
+      <h2 id="viajeFormTitle">Agregar viaje</h2>
+      <div class="grid3">
+        <div class="field">
+          <label>No. de viaje</label>
+          <input type="text" id="viajeNumero" placeholder="Ej. V-1024">
+        </div>
+        <div class="field">
+          <label>Fecha</label>
+          <input type="date" id="viajeFecha">
+        </div>
+        <div class="field">
+          <label>Comentarios</label>
+          <input type="text" id="viajeComentarios" placeholder="Opcional">
+        </div>
+      </div>
+      <div class="toolbar">
+        <button class="btn btn-primary" onclick="guardarViaje()">Guardar viaje</button>
+        <button class="btn btn-ghost" id="viajeCancelEdit" style="display:none" onclick="cancelarEdicionViaje()">Cancelar edición</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Viajes registrados <span class="tag" id="viajesCount">0</span></h2>
+      <div id="viajesTableWrap"></div>
+    </div>
+  </section>
+
+  <!-- ================= MARCAS ================= -->
+  <section class="tab-panel" id="tab-marcas">
+    <div class="card">
+      <h2 id="marcaFormTitle">Agregar marca</h2>
+      <div class="grid2">
+        <div class="field">
+          <label>Número</label>
+          <input type="text" id="marcaNumero" placeholder="Ej. 001">
+        </div>
+        <div class="field">
+          <label>Descripción</label>
+          <input type="text" id="marcaDescripcion" placeholder="Nombre de la marca">
+        </div>
+      </div>
+      <div class="toolbar">
+        <button class="btn btn-primary" onclick="guardarMarca()">Guardar marca</button>
+        <button class="btn btn-ghost" id="marcaCancelEdit" style="display:none" onclick="cancelarEdicionMarca()">Cancelar edición</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Marcas registradas <span class="tag" id="marcasCount">0</span></h2>
+      <div id="marcasTableWrap"></div>
+    </div>
+  </section>
+
+  <!-- ================= NUEVO REPORTE ================= -->
+  <section class="tab-panel" id="tab-nuevo">
+    <div class="card">
+      <h2>Datos del reporte</h2>
+      <div class="grid2">
+        <div class="field">
+          <label>No. de viaje</label>
+          <select id="repViajeSelect"></select>
+        </div>
+        <div class="field">
+          <label>Fecha de captura</label>
+          <input type="date" id="repFechaCaptura">
+        </div>
+      </div>
+    </div>
+
+    <div id="marcasContainer"></div>
+
+    <div class="toolbar">
+      <button class="btn btn-ambar" onclick="agregarMarcaBlock()">+ Agregar marca</button>
+    </div>
+
+    <div class="grand-total-bar">
+      <div>
+        <div class="label">Total general del reporte</div>
+      </div>
+      <div class="sello grande" id="grandTotalDisplay">$0.00</div>
+    </div>
+
+    <div class="toolbar">
+      <button class="btn btn-primary" onclick="guardarReporte()">Guardar reporte</button>
+      <button class="btn btn-danger" onclick="confirmarCancelarReporte()">Cancelar / limpiar</button>
+    </div>
+  </section>
+
+  <!-- ================= HISTORIAL ================= -->
+  <section class="tab-panel" id="tab-historial">
+    <div class="card">
+      <h2>Reportes guardados <span class="tag" id="reportesCount">0</span></h2>
+      <div id="reportesListWrap"></div>
+    </div>
+  </section>
+
+  <!-- ================= DETALLE REPORTE ================= -->
+  <section class="tab-panel" id="tab-detalle">
+    <div class="no-print toolbar" style="margin-bottom:10px;">
+      <button class="btn btn-ghost" onclick="goTab('historial')">&larr; Volver</button>
+      <button class="btn btn-ambar" onclick="window.print()">Imprimir / PDF</button>
+    </div>
+    <div id="detalleWrap"></div>
+  </section>
+
+</main>
+
+<!-- MODAL DATOS DE LA EMPRESA -->
+<div class="modal-overlay" id="modalEmpresa">
+  <div class="modal-box wide">
+    <h3>Datos de la empresa</h3>
+    <div class="field">
+      <label>Logotipo</label>
+      <img id="empresaLogoPreview" class="preview-logo" style="display:none;">
+      <input type="file" accept="image/*" id="empresaLogoInput" onchange="previsualizarImagen(this,'empresaLogoPreview')">
+    </div>
+    <div class="field"><label>Nombre de la empresa</label><input type="text" id="empresaNombre"></div>
+    <div class="field"><label>Dirección</label><input type="text" id="empresaDireccion"></div>
+    <div class="field"><label>Enlace de mapa (Google Maps)</label><input type="text" id="empresaMapa" placeholder="https://maps.google.com/..."></div>
+    <div class="field"><label>Teléfono</label><input type="tel" id="empresaTelefono"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="cerrarModal('modalEmpresa')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarEmpresa()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIGURACION / COPIA DE SEGURIDAD -->
+<div class="modal-overlay" id="modalBackup">
+  <div class="modal-box wide">
+    <h3>Configuración y copia de seguridad</h3>
+    <div class="field">
+      <label>Nombre interno de esta copia</label>
+      <input type="text" id="idCopiaInput" placeholder="ej: unidad-norte, oficina-central...">
+      <small style="color:var(--texto-suave);display:block;margin-top:4px;">
+        Sirve para que cada copia de este archivo guarde sus propios datos y no se mezclen entre sí. Al cambiarlo, los datos actuales de esta copia se guardan bajo el nuevo nombre.
+      </small>
+      <div style="margin-top:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="guardarIdCopia()">Guardar nombre interno</button>
+      </div>
+    </div>
+    <hr style="border:none;border-top:1px solid var(--linea);margin:16px 0;">
+    <div class="field">
+      <label>Copia de seguridad</label>
+      <small style="color:var(--texto-suave);display:block;margin-bottom:8px;">
+        Descarga un archivo con todos los datos de esta copia (viajes, marcas, reportes y datos de la empresa). Guárdalo si vas a mover, renombrar o reinstalar la app.
+      </small>
+      <button class="btn btn-ambar btn-sm" onclick="exportarDatos()">⬇️ Descargar copia de seguridad (.json)</button>
+      <small id="ultimaCopiaTxt" style="color:var(--texto-suave);display:block;margin-top:8px;"></small>
+    </div>
+    <div class="field" style="background:rgba(255,180,0,.08);border:1px solid rgba(255,180,0,.35);border-radius:8px;padding:10px 12px;">
+      <label style="margin-bottom:4px;">⚠️ Importante para que tus datos no se pierdan</label>
+      <small style="color:var(--texto-suave);display:block;line-height:1.5;">
+        Los datos se guardan en este navegador, ligados a <b>este archivo, en esta ubicación</b>. Si guardas o descargas una copia nueva del archivo (aunque se llame igual), el navegador la trata como una app distinta y no ve los datos anteriores.<br><br>
+        Para no perder información:<br>
+        • Usa siempre el <b>mismo archivo</b>, en el <b>mismo lugar</b> (no lo dupliques ni lo vuelvas a descargar).<br>
+        • Si vas a reemplazar el archivo por una versión nueva, guárdalo con el <b>mismo nombre, en la misma carpeta</b>, sobrescribiendo el anterior.<br>
+        • Descarga una <b>copia de seguridad (.json)</b> seguido, por si el archivo se borra o cambias de equipo.
+      </small>
+    </div>
+    <div class="field">
+      <label>Importar datos</label>
+      <small style="color:var(--texto-suave);display:block;margin-bottom:8px;">
+        Carga un archivo .json exportado previamente. Esto reemplaza todos los datos actuales de esta copia.
+      </small>
+      <input type="file" accept="application/json" id="importarInput" onchange="importarDatos(this)">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="cerrarModal('modalBackup')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- modal confirm -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <p id="modalMsg"></p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="modalCancelBtn">Cancelar</button>
+      <button class="btn btn-danger" id="modalOkBtn">Aceptar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   ALMACENAMIENTO
+   ========================================================= */
+const STORAGE_PREFIX = 'ce_';
+const ID_KEY = 'ce_copiaId';
+
+function obtenerIdCopia(){
+  let id = localStorage.getItem(ID_KEY);
+  if(!id){
+    id = 'existencias'; // identificador por defecto de esta copia
+    localStorage.setItem(ID_KEY, id);
+  }
+  return id;
+}
+let COPIA_ID = obtenerIdCopia();
+
+function keyFor(nombre){ return STORAGE_PREFIX + nombre + '_' + COPIA_ID; }
+
+// migra claves antiguas (sin id de copia) la primera vez que corre esta versión
+function migrarClavesLegacy(){
+  if(COPIA_ID !== 'existencias') return;
+  ['viajes','marcas','reportes'].forEach(n => {
+    const legacy = STORAGE_PREFIX + n;
+    const nueva = keyFor(n);
+    if(localStorage.getItem(legacy) !== null && localStorage.getItem(nueva) === null){
+      localStorage.setItem(nueva, localStorage.getItem(legacy));
+    }
+  });
+}
+migrarClavesLegacy();
+
+function loadLS(nombre, defaultVal){
+  try{
+    const raw = localStorage.getItem(keyFor(nombre));
+    return raw ? JSON.parse(raw) : (defaultVal !== undefined ? defaultVal : []);
+  }catch(e){ return defaultVal !== undefined ? defaultVal : []; }
+}
+function saveLS(nombre, data){ localStorage.setItem(keyFor(nombre), JSON.stringify(data)); }
+
+let viajes = loadLS('viajes', []);
+let marcas = loadLS('marcas', []);
+let reportes = loadLS('reportes', []);
+let empresa = loadLS('empresa', { nombre:'', direccion:'', mapa:'', telefono:'', logo:'' });
+
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+function money(n){ n = Number(n) || 0; return '$' + n.toFixed(2); }
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function escapeHtml(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* =========================================================
+   MODAL / TOAST (reemplazo de confirm() / alert())
+   ========================================================= */
+function showConfirm(msg, onOk){
+  const overlay = document.getElementById('modalOverlay');
+  document.getElementById('modalMsg').textContent = msg;
+  overlay.classList.add('show');
+  const okBtn = document.getElementById('modalOkBtn');
+  const cancelBtn = document.getElementById('modalCancelBtn');
+  function cleanup(){ overlay.classList.remove('show'); okBtn.onclick = null; cancelBtn.onclick = null; }
+  okBtn.onclick = () => { cleanup(); onOk(); };
+  cancelBtn.onclick = () => { cleanup(); };
+}
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* =========================================================
+   MODAL GENERICO (empresa / backup)
+   ========================================================= */
+function abrirModal(id){ document.getElementById(id).classList.add('show'); }
+function cerrarModal(id){ document.getElementById(id).classList.remove('show'); }
+
+function previsualizarImagen(input, previewId){
+  const file = input.files[0];
+  if(!file) return;
+  resizeImageToDataUrl(file, 300, 0.8).then(dataUrl => {
+    const img = document.getElementById(previewId);
+    img.src = dataUrl;
+    img.style.display = 'block';
+  });
+}
+
+/* =========================================================
+   DATOS DE LA EMPRESA
+   ========================================================= */
+function pintarHeaderEmpresa(){
+  document.getElementById('hdrNombreEmpresa').textContent = empresa.nombre || 'Configura los datos de tu empresa';
+  const dirEl = document.getElementById('hdrDireccionEmpresa');
+  dirEl.textContent = empresa.direccion || '';
+  dirEl.style.display = empresa.direccion ? 'block' : 'none';
+  const logo = document.getElementById('hdrLogo');
+  if(empresa.logo){ logo.src = empresa.logo; logo.style.display = 'block'; } else { logo.style.display = 'none'; }
+}
+
+function abrirModalEmpresa(){
+  document.getElementById('empresaNombre').value = empresa.nombre || '';
+  document.getElementById('empresaDireccion').value = empresa.direccion || '';
+  document.getElementById('empresaMapa').value = empresa.mapa || '';
+  document.getElementById('empresaTelefono').value = empresa.telefono || '';
+  const prev = document.getElementById('empresaLogoPreview');
+  if(empresa.logo){ prev.src = empresa.logo; prev.style.display = 'block'; } else { prev.style.display = 'none'; prev.src = ''; }
+  document.getElementById('empresaLogoInput').value = '';
+  abrirModal('modalEmpresa');
+}
+
+function guardarEmpresa(){
+  const nombre = document.getElementById('empresaNombre').value.trim();
+  if(!nombre){ showToast('Escribe el nombre de la empresa.'); return; }
+  empresa.nombre = nombre;
+  empresa.direccion = document.getElementById('empresaDireccion').value.trim();
+  empresa.mapa = document.getElementById('empresaMapa').value.trim();
+  empresa.telefono = document.getElementById('empresaTelefono').value.trim();
+  const prev = document.getElementById('empresaLogoPreview');
+  if(prev.style.display !== 'none' && prev.src) empresa.logo = prev.src;
+  saveLS('empresa', empresa);
+  pintarHeaderEmpresa();
+  cerrarModal('modalEmpresa');
+  showToast('Datos de la empresa guardados.');
+}
+
+/* =========================================================
+   CONFIGURACION / COPIA DE SEGURIDAD
+   ========================================================= */
+function sanitizarIdCopia(txt){
+  return txt.trim().toLowerCase()
+    .replace(/[^a-z0-9_-]+/g,'-')
+    .replace(/-+/g,'-')
+    .replace(/^-|-$/g,'');
+}
+
+function abrirModalBackup(){
+  document.getElementById('idCopiaInput').value = COPIA_ID;
+  document.getElementById('importarInput').value = '';
+  pintarUltimaCopia();
+  abrirModal('modalBackup');
+}
+
+function pintarUltimaCopia(){
+  const el = document.getElementById('ultimaCopiaTxt');
+  if(!el) return;
+  const iso = localStorage.getItem(keyFor('lastBackup'));
+  if(!iso){
+    el.textContent = 'Aún no has descargado ninguna copia de seguridad de esta copia.';
+    return;
+  }
+  const f = new Date(iso);
+  const fmt = f.toLocaleDateString('es-MX', { day:'2-digit', month:'2-digit', year:'numeric' }) + ' ' + f.toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit' });
+  el.textContent = 'Última copia de seguridad descargada: ' + fmt;
+}
+
+function avisarSiFaltaBackup(){
+  const hayDatos = (viajes.length + marcas.length + reportes.length) > 0;
+  if(!hayDatos) return;
+  const iso = localStorage.getItem(keyFor('lastBackup'));
+  const DIAS_LIMITE = 14;
+  let avisar = false;
+  if(!iso){ avisar = true; }
+  else {
+    const dias = (Date.now() - new Date(iso).getTime()) / (1000*60*60*24);
+    if(dias > DIAS_LIMITE) avisar = true;
+  }
+  if(avisar){
+    setTimeout(() => showToast('Recuerda descargar una copia de seguridad en Config. ⚙️ para no perder tus datos.'), 800);
+  }
+}
+
+function refrescarTodo(){
+  renderViajesTable();
+  renderMarcasTable();
+  renderReportesList();
+  renderStats();
+  refreshReportSelects();
+  pintarHeaderEmpresa();
+}
+
+function guardarIdCopia(){
+  const raw = document.getElementById('idCopiaInput').value;
+  const nuevo = sanitizarIdCopia(raw);
+  if(!nuevo){ showToast('Escribe un nombre interno válido (letras, números o guiones).'); return; }
+  if(nuevo === COPIA_ID){ showToast('Ese ya es el nombre interno actual de esta copia.'); return; }
+
+  function aplicarCambio(){
+    COPIA_ID = nuevo;
+    localStorage.setItem(ID_KEY, COPIA_ID);
+    saveLS('viajes', viajes);
+    saveLS('marcas', marcas);
+    saveLS('reportes', reportes);
+    saveLS('empresa', empresa);
+    showToast('Nombre interno actualizado a: ' + COPIA_ID);
+    cerrarModal('modalBackup');
+    refrescarTodo();
+  }
+
+  const existente = localStorage.getItem(STORAGE_PREFIX + 'viajes_' + nuevo);
+  if(existente){
+    showConfirm('Ya hay datos guardados en este navegador con el nombre interno "' + nuevo + '". Si continúas, los datos actuales de esta copia reemplazarán a esos datos. ¿Deseas continuar?', aplicarCambio);
+  } else {
+    aplicarCambio();
+  }
+}
+
+function exportarDatos(){
+  const backup = { app:'ControlExistencias', copiaId: COPIA_ID, exportadoEl: new Date().toISOString(), data: { viajes, marcas, reportes, empresa } };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'controlexistencias_backup_' + COPIA_ID + '_' + todayStr() + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  localStorage.setItem(keyFor('lastBackup'), new Date().toISOString());
+  pintarUltimaCopia();
+  showToast('Copia de seguridad descargada.');
+}
+
+function importarDatos(input){
+  const file = input.files[0];
+  if(!file) return;
+  showConfirm('Esto reemplazará todos los datos actuales de esta copia ("' + COPIA_ID + '") con los datos del archivo importado. ¿Deseas continuar?', () => {
+    const reader = new FileReader();
+    reader.onload = function(e){
+      try{
+        const contenido = JSON.parse(e.target.result);
+        const nuevaData = (contenido && contenido.data) ? contenido.data : contenido;
+        if(!nuevaData || typeof nuevaData !== 'object' || !('viajes' in nuevaData)){
+          showToast('El archivo no tiene un formato válido de copia de seguridad de ControlExistencias.');
+          input.value = '';
+          return;
+        }
+        viajes = nuevaData.viajes || [];
+        marcas = nuevaData.marcas || [];
+        reportes = nuevaData.reportes || [];
+        empresa = nuevaData.empresa || { nombre:'', direccion:'', mapa:'', telefono:'', logo:'' };
+        saveLS('viajes', viajes);
+        saveLS('marcas', marcas);
+        saveLS('reportes', reportes);
+        saveLS('empresa', empresa);
+        refrescarTodo();
+        showToast('Datos importados correctamente.');
+        cerrarModal('modalBackup');
+      }catch(err){
+        showToast('No se pudo leer el archivo. Asegúrate de que sea un .json exportado desde esta app.');
+      }finally{
+        input.value = '';
+      }
+    };
+    reader.readAsText(file);
+  });
+}
+
+/* =========================================================
+   TABS
+   ========================================================= */
+function goTab(name){
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  const btn = document.querySelector('nav.tabs button[data-tab="' + name + '"]');
+  if(btn) btn.classList.add('active');
+  if(name === 'inicio') renderStats();
+  if(name === 'viajes') renderViajesTable();
+  if(name === 'marcas') renderMarcasTable();
+  if(name === 'nuevo') refreshReportSelects();
+  if(name === 'historial') renderReportesList();
+}
+document.getElementById('tabNav').addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-tab]');
+  if(btn) goTab(btn.dataset.tab);
+});
+
+/* =========================================================
+   CATALOGO: VIAJES
+   ========================================================= */
+let editingViajeId = null;
+
+function guardarViaje(){
+  const numero = document.getElementById('viajeNumero').value.trim();
+  const fecha = document.getElementById('viajeFecha').value;
+  const comentarios = document.getElementById('viajeComentarios').value.trim();
+  if(!numero){ showToast('Captura el número de viaje.'); return; }
+
+  if(editingViajeId){
+    const v = viajes.find(x => x.id === editingViajeId);
+    if(v){ v.numero = numero; v.fecha = fecha; v.comentarios = comentarios; }
+    editingViajeId = null;
+    document.getElementById('viajeFormTitle').textContent = 'Agregar viaje';
+    document.getElementById('viajeCancelEdit').style.display = 'none';
+    showToast('Viaje actualizado.');
+  } else {
+    viajes.push({ id: uid(), numero, fecha, comentarios });
+    showToast('Viaje agregado.');
+  }
+  saveLS('viajes', viajes);
+  document.getElementById('viajeNumero').value = '';
+  document.getElementById('viajeFecha').value = '';
+  document.getElementById('viajeComentarios').value = '';
+  renderViajesTable();
+}
+
+function editarViaje(id){
+  const v = viajes.find(x => x.id === id);
+  if(!v) return;
+  editingViajeId = id;
+  document.getElementById('viajeNumero').value = v.numero;
+  document.getElementById('viajeFecha').value = v.fecha || '';
+  document.getElementById('viajeComentarios').value = v.comentarios || '';
+  document.getElementById('viajeFormTitle').textContent = 'Editar viaje';
+  document.getElementById('viajeCancelEdit').style.display = 'inline-block';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function cancelarEdicionViaje(){
+  editingViajeId = null;
+  document.getElementById('viajeNumero').value = '';
+  document.getElementById('viajeFecha').value = '';
+  document.getElementById('viajeComentarios').value = '';
+  document.getElementById('viajeFormTitle').textContent = 'Agregar viaje';
+  document.getElementById('viajeCancelEdit').style.display = 'none';
+}
+function eliminarViaje(id){
+  showConfirm('¿Eliminar este viaje del catálogo?', () => {
+    viajes = viajes.filter(x => x.id !== id);
+    saveLS('viajes', viajes);
+    renderViajesTable();
+    showToast('Viaje eliminado.');
+  });
+}
+function renderViajesTable(){
+  document.getElementById('viajesCount').textContent = viajes.length;
+  const wrap = document.getElementById('viajesTableWrap');
+  if(viajes.length === 0){
+    wrap.innerHTML = '<div class="empty-msg">Aún no hay viajes registrados.</div>';
+    return;
+  }
+  let rows = viajes.slice().sort((a,b)=> (b.fecha||'').localeCompare(a.fecha||'')).map(v => `
+    <tr>
+      <td class="num">${escapeHtml(v.numero)}</td>
+      <td class="num">${escapeHtml(v.fecha || '—')}</td>
+      <td>${escapeHtml(v.comentarios || '—')}</td>
+      <td>
+        <div class="row-actions">
+          <button class="btn btn-ghost btn-sm" onclick="editarViaje('${v.id}')">Editar</button>
+          <button class="btn btn-danger btn-sm" onclick="eliminarViaje('${v.id}')">Eliminar</button>
+        </div>
+      </td>
+    </tr>`).join('');
+  wrap.innerHTML = `<table><thead><tr><th>No. viaje</th><th>Fecha</th><th>Comentarios</th><th>Acciones</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+/* =========================================================
+   CATALOGO: MARCAS
+   ========================================================= */
+let editingMarcaId = null;
+
+function guardarMarca(){
+  const numero = document.getElementById('marcaNumero').value.trim();
+  const descripcion = document.getElementById('marcaDescripcion').value.trim();
+  if(!numero || !descripcion){ showToast('Captura número y descripción.'); return; }
+
+  if(editingMarcaId){
+    const m = marcas.find(x => x.id === editingMarcaId);
+    if(m){ m.numero = numero; m.descripcion = descripcion; }
+    editingMarcaId = null;
+    document.getElementById('marcaFormTitle').textContent = 'Agregar marca';
+    document.getElementById('marcaCancelEdit').style.display = 'none';
+    showToast('Marca actualizada.');
+  } else {
+    marcas.push({ id: uid(), numero, descripcion });
+    showToast('Marca agregada.');
+  }
+  saveLS('marcas', marcas);
+  document.getElementById('marcaNumero').value = '';
+  document.getElementById('marcaDescripcion').value = '';
+  renderMarcasTable();
+}
+function editarMarca(id){
+  const m = marcas.find(x => x.id === id);
+  if(!m) return;
+  editingMarcaId = id;
+  document.getElementById('marcaNumero').value = m.numero;
+  document.getElementById('marcaDescripcion').value = m.descripcion;
+  document.getElementById('marcaFormTitle').textContent = 'Editar marca';
+  document.getElementById('marcaCancelEdit').style.display = 'inline-block';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function cancelarEdicionMarca(){
+  editingMarcaId = null;
+  document.getElementById('marcaNumero').value = '';
+  document.getElementById('marcaDescripcion').value = '';
+  document.getElementById('marcaFormTitle').textContent = 'Agregar marca';
+  document.getElementById('marcaCancelEdit').style.display = 'none';
+}
+function eliminarMarca(id){
+  showConfirm('¿Eliminar esta marca del catálogo?', () => {
+    marcas = marcas.filter(x => x.id !== id);
+    saveLS('marcas', marcas);
+    renderMarcasTable();
+    showToast('Marca eliminada.');
+  });
+}
+function renderMarcasTable(){
+  document.getElementById('marcasCount').textContent = marcas.length;
+  const wrap = document.getElementById('marcasTableWrap');
+  if(marcas.length === 0){
+    wrap.innerHTML = '<div class="empty-msg">Aún no hay marcas registradas.</div>';
+    return;
+  }
+  let rows = marcas.map(m => `
+    <tr>
+      <td class="num">${escapeHtml(m.numero)}</td>
+      <td>${escapeHtml(m.descripcion)}</td>
+      <td>
+        <div class="row-actions">
+          <button class="btn btn-ghost btn-sm" onclick="editarMarca('${m.id}')">Editar</button>
+          <button class="btn btn-danger btn-sm" onclick="eliminarMarca('${m.id}')">Eliminar</button>
+        </div>
+      </td>
+    </tr>`).join('');
+  wrap.innerHTML = `<table><thead><tr><th>Número</th><th>Descripción</th><th>Acciones</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+/* =========================================================
+   NUEVO REPORTE - estado en memoria
+   ========================================================= */
+let reportBlocks = []; // [{blockId, productos:[{rowId, foto, juarez, macro, valle}]}]
+
+function refreshReportSelects(){
+  const sel = document.getElementById('repViajeSelect');
+  if(viajes.length === 0){
+    sel.innerHTML = '<option value="">-- Agregue un viaje primero --</option>';
+  } else {
+    sel.innerHTML = viajes.map(v => `<option value="${v.id}">${escapeHtml(v.numero)}${v.fecha ? ' — ' + escapeHtml(v.fecha) : ''}</option>`).join('');
+  }
+  if(!document.getElementById('repFechaCaptura').value){
+    document.getElementById('repFechaCaptura').value = todayStr();
+  }
+}
+
+function marcaOptionsHtml(selectedId){
+  if(marcas.length === 0) return '<option value="">-- Agregue una marca primero --</option>';
+  return marcas.map(m => `<option value="${m.id}" ${m.id===selectedId?'selected':''}>${escapeHtml(m.numero)} — ${escapeHtml(m.descripcion)}</option>`).join('');
+}
+
+function agregarMarcaBlock(){
+  if(marcas.length === 0){ showToast('Primero registra al menos una marca en el catálogo.'); return; }
+  const block = { blockId: uid(), marcaId: marcas[0].id, productos: [] };
+  reportBlocks.push(block);
+  renderMarcaBlock(block);
+  agregarProductoRow(block); // inicia con una fila de producto
+}
+
+function renderMarcaBlock(block){
+  const container = document.getElementById('marcasContainer');
+  const div = document.createElement('div');
+  div.className = 'marca-block';
+  div.id = 'block-' + block.blockId;
+  div.innerHTML = `
+    <div class="marca-head">
+      <div class="field">
+        <label>Marca</label>
+        <select class="marcaSelect" data-block="${block.blockId}">${marcaOptionsHtml(block.marcaId)}</select>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="eliminarMarcaBlock('${block.blockId}')">Eliminar marca</button>
+    </div>
+    <table>
+      <thead>
+        <tr><th class="foto-cell">Foto</th><th>Modelo</th><th>Juárez</th><th>Macro</th><th>Valle</th><th>Total</th><th></th></tr>
+      </thead>
+      <tbody class="productosBody" id="productos-${block.blockId}"></tbody>
+      <tfoot>
+        <tr class="subtotal-row">
+          <td colspan="5">Subtotal marca</td>
+          <td colspan="2"><span class="sello" id="subtotal-${block.blockId}">$0.00</span></td>
+        </tr>
+      </tfoot>
+    </table>
+    <div class="toolbar">
+      <button class="btn btn-ghost btn-sm" onclick="agregarProductoRow('${block.blockId}')">+ Agregar producto</button>
+    </div>
+  `;
+  container.appendChild(div);
+  div.querySelector('.marcaSelect').addEventListener('change', (e) => {
+    block.marcaId = e.target.value;
+  });
+}
+
+function eliminarMarcaBlock(blockId){
+  showConfirm('¿Eliminar esta marca y todos sus productos del reporte?', () => {
+    reportBlocks = reportBlocks.filter(b => b.blockId !== blockId);
+    const el = document.getElementById('block-' + blockId);
+    if(el) el.remove();
+    updateGrandTotal();
+  });
+}
+
+function agregarProductoRow(blockId){
+  const block = reportBlocks.find(b => b.blockId === blockId);
+  if(!block) return;
+  const row = { rowId: uid(), foto: null, modelo: '', juarez: 0, macro: 0, valle: 0 };
+  block.productos.push(row);
+  renderProductoRow(block, row);
+  updateBlockSubtotal(block);
+}
+
+function renderProductoRow(block, row){
+  const tbody = document.getElementById('productos-' + block.blockId);
+  const tr = document.createElement('tr');
+  tr.id = 'row-' + row.rowId;
+  tr.innerHTML = `
+    <td class="foto-cell">
+      <div class="foto-placeholder" id="fotoWrap-${row.rowId}">📷</div>
+      <input type="file" accept="image/*" style="display:none" id="fotoInput-${row.rowId}">
+    </td>
+    <td><input type="text" placeholder="Modelo" id="modelo-${row.rowId}" style="min-width:90px;"></td>
+    <td><input type="number" class="qty" min="0" step="any" value="0" id="juarez-${row.rowId}"></td>
+    <td><input type="number" class="qty" min="0" step="any" value="0" id="macro-${row.rowId}"></td>
+    <td><input type="number" class="qty" min="0" step="any" value="0" id="valle-${row.rowId}"></td>
+    <td><span class="sello" id="total-${row.rowId}">$0.00</span></td>
+    <td><button class="btn btn-danger btn-sm" onclick="eliminarProductoRow('${block.blockId}','${row.rowId}')">✕</button></td>
+  `;
+  tbody.appendChild(tr);
+
+  document.getElementById('modelo-' + row.rowId).addEventListener('input', (e) => {
+    row.modelo = e.target.value;
+  });
+
+  const fotoWrap = document.getElementById('fotoWrap-' + row.rowId);
+  const fotoInput = document.getElementById('fotoInput-' + row.rowId);
+  fotoWrap.addEventListener('click', () => fotoInput.click());
+  fotoInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    resizeImageToDataUrl(file, 640, 0.72).then(dataUrl => {
+      row.foto = dataUrl;
+      fotoWrap.outerHTML = `<img class="foto-thumb" id="fotoWrap-${row.rowId}" src="${dataUrl}" title="Clic para cambiar">`;
+      document.getElementById('fotoWrap-' + row.rowId).addEventListener('click', () => fotoInput.click());
+    });
+  });
+
+  ['juarez','macro','valle'].forEach(campo => {
+    document.getElementById(campo + '-' + row.rowId).addEventListener('input', (e) => {
+      row[campo] = parseFloat(e.target.value) || 0;
+      const total = row.juarez + row.macro + row.valle;
+      document.getElementById('total-' + row.rowId).textContent = money(total);
+      updateBlockSubtotal(block);
+    });
+  });
+}
+
+function eliminarProductoRow(blockId, rowId){
+  const block = reportBlocks.find(b => b.blockId === blockId);
+  if(!block) return;
+  block.productos = block.productos.filter(p => p.rowId !== rowId);
+  const el = document.getElementById('row-' + rowId);
+  if(el) el.remove();
+  updateBlockSubtotal(block);
+}
+
+function resizeImageToDataUrl(file, maxWidth, quality){
+  return new Promise((resolve) => {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = (e) => { img.src = e.target.result; };
+    img.onload = () => {
+      const scale = Math.min(1, maxWidth / img.width);
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function blockTotal(block){
+  return block.productos.reduce((sum, p) => sum + (p.juarez + p.macro + p.valle), 0);
+}
+function updateBlockSubtotal(block){
+  const el = document.getElementById('subtotal-' + block.blockId);
+  if(el) el.textContent = money(blockTotal(block));
+  updateGrandTotal();
+}
+function updateGrandTotal(){
+  const total = reportBlocks.reduce((sum, b) => sum + blockTotal(b), 0);
+  document.getElementById('grandTotalDisplay').textContent = money(total);
+}
+
+function confirmarCancelarReporte(){
+  showConfirm('¿Limpiar todo el reporte actual? Se perderán los datos capturados.', () => {
+    reportBlocks = [];
+    document.getElementById('marcasContainer').innerHTML = '';
+    updateGrandTotal();
+    showToast('Reporte limpiado.');
+  });
+}
+
+function guardarReporte(){
+  const viajeId = document.getElementById('repViajeSelect').value;
+  const fechaCaptura = document.getElementById('repFechaCaptura').value;
+  if(!viajeId){ showToast('Selecciona el número de viaje.'); return; }
+  if(reportBlocks.length === 0){ showToast('Agrega al menos una marca con productos.'); return; }
+  const hayProductos = reportBlocks.some(b => b.productos.length > 0);
+  if(!hayProductos){ showToast('Agrega al menos un producto.'); return; }
+
+  const viaje = viajes.find(v => v.id === viajeId);
+  const marcasSnapshot = reportBlocks.filter(b => b.productos.length > 0).map(b => {
+    const marca = marcas.find(m => m.id === b.marcaId);
+    return {
+      marcaNumero: marca ? marca.numero : '—',
+      marcaDescripcion: marca ? marca.descripcion : '(marca no encontrada)',
+      productos: b.productos.map(p => ({
+        foto: p.foto,
+        modelo: p.modelo || '',
+        juarez: p.juarez, macro: p.macro, valle: p.valle,
+        total: p.juarez + p.macro + p.valle,
+        cantidadOrdenada: 0
+      })),
+      subtotal: blockTotal(b)
+    };
+  });
+  const total = marcasSnapshot.reduce((s,m) => s + m.subtotal, 0);
+
+  const reporte = {
+    id: uid(),
+    viajeId,
+    viajeNumero: viaje ? viaje.numero : '—',
+    viajeFecha: viaje ? viaje.fecha : '',
+    fechaCaptura,
+    fechaCreacion: new Date().toISOString(),
+    marcas: marcasSnapshot,
+    total
+  };
+  reportes.push(reporte);
+  saveLS('reportes', reportes);
+
+  reportBlocks = [];
+  document.getElementById('marcasContainer').innerHTML = '';
+  updateGrandTotal();
+  showToast('Reporte guardado.');
+  goTab('historial');
+}
+
+/* =========================================================
+   HISTORIAL DE REPORTES
+   ========================================================= */
+function renderReportesList(){
+  document.getElementById('reportesCount').textContent = reportes.length;
+  const wrap = document.getElementById('reportesListWrap');
+  if(reportes.length === 0){
+    wrap.innerHTML = '<div class="empty-msg">Aún no hay reportes guardados.</div>';
+    return;
+  }
+  const ordenados = reportes.slice().sort((a,b) => b.fechaCreacion.localeCompare(a.fechaCreacion));
+  wrap.innerHTML = ordenados.map(r => `
+    <div class="card reporte-card">
+      <div class="meta">
+        <strong>Viaje ${escapeHtml(r.viajeNumero)}</strong><br>
+        Captura: ${escapeHtml(r.fechaCaptura || '—')} · ${r.marcas.length} marca(s) · Total: <span class="num">${money(r.total)}</span>
+      </div>
+      <div class="row-actions">
+        <button class="btn btn-ghost btn-sm" onclick="verReporte('${r.id}')">Ver / Imprimir</button>
+        <button class="btn btn-danger btn-sm" onclick="eliminarReporte('${r.id}')">Eliminar</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function eliminarReporte(id){
+  showConfirm('¿Eliminar este reporte guardado?', () => {
+    reportes = reportes.filter(r => r.id !== id);
+    saveLS('reportes', reportes);
+    renderReportesList();
+    showToast('Reporte eliminado.');
+  });
+}
+
+function actualizarCantidadOrdenada(reporteId, mIdx, pIdx, valor){
+  const r = reportes.find(x => x.id === reporteId);
+  if(!r) return;
+  const marca = r.marcas[mIdx];
+  if(!marca) return;
+  const producto = marca.productos[pIdx];
+  if(!producto) return;
+  producto.cantidadOrdenada = parseFloat(valor) || 0;
+  saveLS('reportes', reportes);
+}
+
+function verReporte(id){
+  const r = reportes.find(x => x.id === id);
+  if(!r) return;
+  const wrap = document.getElementById('detalleWrap');
+  const marcasHtml = r.marcas.map((m, mIdx) => `
+    <div class="card">
+      <h2>${escapeHtml(m.marcaNumero)} — ${escapeHtml(m.marcaDescripcion)} <span class="tag">Subtotal ${money(m.subtotal)}</span></h2>
+      <table>
+        <thead><tr><th class="foto-cell">Foto</th><th>Modelo</th><th>Juárez</th><th>Macro</th><th>Valle</th><th>Total piezas</th><th>Cant. ordenada</th></tr></thead>
+        <tbody>
+          ${m.productos.map((p, pIdx) => `
+            <tr>
+              <td class="foto-cell">${p.foto ? `<img class="foto-thumb" src="${p.foto}">` : '<div class="foto-placeholder">—</div>'}</td>
+              <td>${escapeHtml(p.modelo || '—')}</td>
+              <td class="num">${p.juarez}</td>
+              <td class="num">${p.macro}</td>
+              <td class="num">${p.valle}</td>
+              <td><span class="sello verde">${money(p.total)}</span></td>
+              <td><input type="number" class="qty" min="0" step="any" style="width:90px;" value="${p.cantidadOrdenada || 0}" onchange="actualizarCantidadOrdenada('${r.id}', ${mIdx}, ${pIdx}, this.value)"></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `).join('');
+
+  wrap.innerHTML = `
+    <div class="view-header">
+      <div>
+        <div class="titulo">Reporte de existencias — Viaje ${escapeHtml(r.viajeNumero)}</div>
+        <div class="sub">Fecha de viaje: ${escapeHtml(r.viajeFecha || '—')} &nbsp;·&nbsp; Fecha de captura: ${escapeHtml(r.fechaCaptura || '—')}</div>
+      </div>
+      <div class="sello grande">${money(r.total)}</div>
+    </div>
+    ${marcasHtml}
+  `;
+  goTab('detalle');
+}
+
+/* =========================================================
+   ESTADISTICAS (INICIO)
+   ========================================================= */
+function renderStats(){
+  const box = document.getElementById('statsBox');
+  const totalGeneral = reportes.reduce((s,r) => s + r.total, 0);
+  box.innerHTML = `
+    <div class="card" style="margin-bottom:0;">
+      <h2 style="margin-bottom:4px;">Viajes</h2>
+      <div class="sello" style="font-size:1.2rem;">${viajes.length}</div>
+    </div>
+    <div class="card" style="margin-bottom:0;">
+      <h2 style="margin-bottom:4px;">Marcas</h2>
+      <div class="sello" style="font-size:1.2rem;">${marcas.length}</div>
+    </div>
+    <div class="card" style="margin-bottom:0;">
+      <h2 style="margin-bottom:4px;">Reportes</h2>
+      <div class="sello verde" style="font-size:1.2rem;">${reportes.length}</div>
+    </div>
+  `;
+}
+
+/* =========================================================
+   INICIALIZACION
+   ========================================================= */
+document.getElementById('repFechaCaptura').value = todayStr();
+pintarHeaderEmpresa();
+renderStats();
+renderViajesTable();
+renderMarcasTable();
+refreshReportSelects();
+renderReportesList();
+avisarSiFaltaBackup();
+</script>
+</body>
+</html>
